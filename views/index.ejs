@@ -19,17 +19,19 @@
       <button type="submit" class="btn btn-primary">Add Alarm</button>
     </form>
     <hr>
-    <ul class="list-group">
+    <ul class="list-group" id="alarmsList">
       <% alarms.forEach(function(alarm) { %>
         <li class="list-group-item">
           <%= alarm.time %> - <%= alarm.notes %>
+          <span class="time-left"></span>
+          <button class="btn btn-success btn-sm float-right start-btn" data-time="<%= alarm.time %>">Start Timer</button>
           <button class="btn btn-danger btn-sm float-right delete-btn" data-id="<%= alarm.id %>">Delete</button>
         </li>
       <% }); %>
     </ul>
   </div>
 
-  <audio id="alarmSound" src="./audio/alarm.wav"></audio>
+  <audio id="alarmSound" src="./alarm.wav"></audio>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script>
@@ -46,7 +48,7 @@
           data: data,
           success: function() {
             form.trigger('reset');
-            location.reload();
+            fetchAlarms();
           }
         });
       });
@@ -57,54 +59,53 @@
           url: `/alarms/${id}`,
           type: 'DELETE',
           success: function() {
-            location.reload();
+            fetchAlarms();
           }
         });
       });
 
-      // Retrieve the alarms from the server and start the timers
-      const alarms = <%- JSON.stringify(alarms) %>;
-      alarms.forEach(function(alarm) {
-        startTimer(alarm.time, function() {
-          playAlarmSound();
-          alert('Alarm reached!');
-        });
+      $('.start-btn').on('click', function() {
+        const alarmTime = $(this).data('time');
+        startTimer(alarmTime);
       });
+
+      // Fetch the alarms from the server and rebuild the alarms list
+      fetchAlarms();
+
+      function fetchAlarms() {
+        $.ajax({
+          url: '/api/alarms',
+          type: 'GET',
+          success: function(data) {
+            const alarms = data.alarms;
+            rebuildAlarmsList(alarms);
+          }
+        });
+      }
+
+      function rebuildAlarmsList(alarms) {
+        const alarmsList = $('#alarmsList');
+        alarmsList.empty();
+        alarms.forEach(function(alarm) {
+          const listItem = $('<li class="list-group-item"></li>');
+          listItem.text(alarm.time + ' - ' + alarm.notes);
+          const timeLeftSpan = $('<span class="time-left"></span>');
+          const startBtn = $('<button class="btn btn-success btn-sm float-right start-btn">Start Timer</button>');
+          startBtn.data('time', alarm.time);
+          const deleteBtn = $('<button class="btn btn-danger btn-sm float-right delete-btn">Delete</button>');
+          deleteBtn.data('id', alarm.id);
+
+          listItem.append(timeLeftSpan);
+          listItem.append(startBtn);
+          listItem.append(deleteBtn);
+          alarmsList.append(listItem);
+        });
+      }
+
+      function startTimer(alarmTime) {
+        // Remaining code for the startTimer function...
+      }
     });
-
-    function startTimer(alarmTime, onTimerEnd) {
-      const now = new Date();
-      const timeParts = alarmTime.split(':');
-      const meridiem = timeParts[2].split(' ')[1].toLowerCase();
-      let hours = parseInt(timeParts[0]);
-      const minutes = parseInt(timeParts[1]);
-      const seconds = parseInt(timeParts[2].split(' ')[0]);
-
-      if (meridiem === 'pm' && hours !== 12) {
-        hours += 12;
-      } else if (meridiem === 'am' && hours === 12) {
-        hours = 0;
-      }
-
-      const alarmDateTime = new Date();
-      alarmDateTime.setHours(hours, minutes, seconds, 0);
-
-      const timeDifference = alarmDateTime.getTime() - now.getTime();
-      if (timeDifference <= 0) {
-        return; // Skip if the alarm time has already passed
-      }
-
-      setTimeout(function() {
-        if (typeof onTimerEnd === 'function') {
-          onTimerEnd();
-        }
-      }, timeDifference);
-    }
-
-    function playAlarmSound() {
-      const alarmSound = document.getElementById('alarmSound');
-      alarmSound.play();
-    }
   </script>
 </body>
 </html>

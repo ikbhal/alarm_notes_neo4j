@@ -29,6 +29,16 @@ app.get('/', async (req, res) => {
 //   await session.run('CREATE (a:Alarm {time: $time, notes: $notes})', { time, notes });
 //   res.redirect('/');
 // });
+app.get('/api/alarms', async (req, res) => {
+  try {
+    const result = await session.run('MATCH (a:Alarm) RETURN a');
+    const alarms = result.records.map(record => record.get('a').properties);
+    res.json({ alarms });
+  } catch (error) {
+    console.error('Failed to fetch alarms:', error);
+    res.status(500).json({ error: 'Failed to fetch alarms' });
+  }
+});
 
 app.post('/alarms', async (req, res) => {
   const { time, notes } = req.body;
