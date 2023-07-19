@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session');
+const express_session = require('express-session');
 const neo4j = require('neo4j-driver');
 // const exphbs = require('express-handlebars');
 const { v4: uuidv4 } = require('uuid');
@@ -25,7 +25,7 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-app.use(session(sessionOptions));
+app.use(express_session(sessionOptions));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
