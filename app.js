@@ -33,6 +33,10 @@ app.use(express.static('public'));
 app.set('view engine', 'handlebars');
 app.set('view engine', 'ejs');
 
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
 app.post('/login', (req, res) => {
   const { email, mobile } = req.body;
 
