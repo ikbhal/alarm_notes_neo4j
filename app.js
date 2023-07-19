@@ -33,6 +33,17 @@ app.use(express.static('public'));
 app.set('view engine', 'handlebars');
 app.set('view engine', 'ejs');
 
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error destroying session:', err);
+    }
+    res.redirect('/login');
+  });
+});
+
+
 app.get('/login', (req, res) => {
   res.render('login');
 });
