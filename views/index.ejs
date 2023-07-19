@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Alarms</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Alarms</h1>
+    <form id="addAlarmForm" method="post" action="/alarms">
+      <div class="form-group">
+        <label for="time">Time:</label>
+        <input type="text" class="form-control" id="time" name="time" placeholder="Enter the alarm time">
+      </div>
+      <div class="form-group">
+        <label for="notes">Notes:</label>
+        <input type="text" class="form-control" id="notes" name="notes" placeholder="Enter any notes">
+      </div>
+      <button type="submit" class="btn btn-primary">Add Alarm</button>
+    </form>
+    <hr>
+    <ul class="list-group">
+      <% alarms.forEach(function(alarm) { %>
+        <li class="list-group-item">
+          <%= alarm.time %> - <%= alarm.notes %>
+          <button class="btn btn-danger btn-sm float-right delete-btn" data-id="<%= alarm.id %>">Delete</button>
+        </li>
+      <% }); %>
+    </ul>
+  </div>
+
+  <audio id="alarmSound" src="./audio/alarm.wav"></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#addAlarmForm').submit(function(event) {
+        event.preventDefault();
+        const form = $(this);
+        const url = form.attr('action');
+        const data = form.serialize();
+
+        $.ajax({
+          type: 'POST',
+          url: url,
+          data: data,
+          success: function() {
+            form.trigger('reset');
+            location.reload();
+          }
+        });
+      });
+
+      $('.delete-btn').on('click', function() {
+        const id = $(this).data('id');
+        $.ajax({
+          url: `/alarms/${id}`,
+          type: 'DELETE',
+          success: function() {
+            location.reload();
+          }
+        });
+      });
+
+      // Retrieve the alarms from the server and start the timers
+      const alarms = <%- JSON.stringify(alarms) %>;
+      alarms.forEach(function(alarm) {
+        startTimer(alarm.time, function() {
+          playAlarmSound();
+          alert('Alarm reached!');
+        });
+      });
+    });
+
+    function startTimer(alarmTime, onTimerEnd) {
+      const now = new Date();
+      const timeParts = alarmTime.split(':');
+      const meridiem = timeParts[2].split(' ')[1].toLowerCase();
+      let hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
+      const seconds = parseInt(timeParts[2].split(' ')[0]);
+
+      if (meridiem === 'pm' && hours !== 12) {
+        hours += 12;
+      } else if (meridiem === 'am' && hours === 12) {
+        hours = 0;
+      }
+
+      const alarmDateTime = new Date();
+      alarmDateTime.setHours(hours, minutes, seconds, 0);
+
+      const timeDifference = alarmDateTime.getTime() - now.getTime();
+      if (timeDifference <= 0) {
+        return; // Skip if the alarm time has already passed
+      }
+
+      setTimeout(function() {
+        if (typeof onTimerEnd === 'function') {
+          onTimerEnd();
+        }
+      }, timeDifference);
+    }
+
+    function playAlarmSound() {
+      const alarmSound = document.getElementById('alarmSound');
+      alarmSound.play();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Alarm Timer</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+  <h1>Alarm Timer</h1>
+  <form id="alarmForm">
+    <label for="alarmTime">Enter Alarm Time(hh:mm:ss am/pm):</label>
+    <input type="text" id="alarmTime" name="alarmTime" placeholder="hh:mm:ss AM/pm"> <br/>
+    <label for="alarmNotes">Enter Alarm Notes:</label>
+    <input type="text" id="alarmNotes" name="alarmNotes" placeholder="hh:mm:ss AM/pm"> <br/>
+    <button type="submit">Start Timer</button>
+  </form>
+  <div id="timerDisplay"></div>
+
+  <audio id="alarmSound" src="./alarm2.wav"></audio>
+
+  <script>
+    $(document).ready(function () {
+      $('#alarmForm').submit(function (event) {
+        event.preventDefault();
+        const alarmTime = $('#alarmTime').val();
+        // setAlarm(alarmTime);
+        startTimer(alarmTime);
+      });
+    });
+
+    function playAlarmSound() {
+      const alarmSound = document.getElementById('alarmSound');
+      alarmSound.play();
+    } l
+
+    // Example usage:
+    // const userTime = '5:00:00 PM'; // User-provided alarm time
+    // setAlarm(userTime, function () {
+    //   // Perform your desired action when the alarm is reached
+    //   alert('Alarm reached!');
+    // });
+    l̥
+
+    function startTimer(alarmTime) {
+      const now = new Date();
+      const timeParts = alarmTime.split(':');
+      const meridiem = timeParts[2].split(' ')[1].toLowerCase();
+      let hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
+      const seconds = parseInt(timeParts[2].split(' ')[0]);
+
+      if (meridiem === 'pm' && hours !== 12) {
+        hours += 12;
+      } else if (meridiem === 'am' && hours === 12) {
+        hours = 0;
+      }
+
+      const alarmDateTime = new Date();
+      alarmDateTime.setHours(hours, minutes, seconds, 0);
+
+      const timeDifference = alarmDateTime.getTime() - now.getTime();
+      if (timeDifference <= 0) {
+        alert('Invalid alarm time. Please enter a future time.');
+        return;
+      }
+
+      const intervalId = setInterval(function () {
+        const remainingTime = alarmDateTime.getTime() - Date.now();
+        if (remainingTime <= 0) {
+          clearInterval(intervalId);
+          playAlarmSound();
+          alert('Alarm reached!');
+          // alarm sounds https://mixkit.co/free-sound-effects/alarm/
+        }
+        const timeLeft = new Date(remainingTime);
+        const displayText = timeLeft.toISOString().substr(11, 8);
+        $('#timerDisplay').text(displayText);
+      }, 1000);
+    }
+
+
+    function playAlarmSound() {
+      const alarmSound = document.getElementById('alarmSound');
+      alarmSound.play();
+    }
+  </script>
+</body>
+
+</html>
