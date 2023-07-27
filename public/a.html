@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Multiple Timers</title>
+</head>
+
+<body>
+    <h1>Multiple Timers</h1>
+
+    <label for="alarm-time">Set Alarm Time (hh:mm:ss am/pm): </label>
+    <input type="text" id="alarm-time" placeholder="e.g., 10:30:00 AM">
+    <button onclick="createAlarm()">Create Alarm</button>
+
+    <ul id="alarms-list">
+        <!-- The list of alarms will be populated here -->
+    </ul>
+    <!-- Add an audio element to play the sound -->
+    <audio id="alarm-sound" src="alarm.wav" preload="auto"></audio>
+
+    <script>
+        let alarms = {};
+
+        function createAlarm() {
+            const alarmTimeInput = document.getElementById("alarm-time");
+            const timeStr = alarmTimeInput.value.trim();
+            if (timeStr === "") return;
+
+            const timeFormat = /^(1[0-2]|0?[1-9]):([0-5][0-9]):([0-5][0-9]) (AM|PM|am|pm)$/;
+
+            if (!timeStr.match(timeFormat)) {
+                alert("Invalid time format. Please use 'hh:mm:ss am/pm' format.");
+                return;
+            }
+
+            const alarmName = "Alarm_" + Object.keys(alarms).length;
+            alarms[alarmName] = { timeStr };
+            updateAlarmsList();
+            alarmTimeInput.value = "";
+        }
+
+        function startAlarm(alarmName) {
+            const alarmTimeStr = alarms[alarmName].timeStr;
+            const alarmTime = new Date();
+            const [time, period] = alarmTimeStr.split(" ");
+            const [hours, minutes, seconds] = time.split(":");
+            alarmTime.setHours(parseInt(hours, 10));
+            alarmTime.setMinutes(parseInt(minutes, 10));
+            alarmTime.setSeconds(parseInt(seconds, 10));
+            alarmTime.setMilliseconds(0);
+
+            const intervalId = setInterval(() => {
+                const currentTime = new Date();
+                const timeLeft = alarmTime - currentTime;
+
+                if (timeLeft > 0) {
+                    updateAlarmTimeLeft(alarmName, timeLeft);
+                } else {
+                    clearInterval(intervalId);
+                    alert(`ALARM: ${alarmName} - Time's up!`);
+                    playAlarmSound(); // Play the alarm sound
+                }
+            }, 1000);
+        }
+
+        function playAlarmSound() {
+            const audioElement = document.getElementById("alarm-sound");
+            audioElement.play();
+        }
+        function pauseAlarm(alarmName) {
+            const alarmTimeStr = alarms[alarmName].timeStr;
+            const alarmTime = new Date("2000-01-01 " + alarmTimeStr);
+
+            // Pause the alarm for 5 minutes (300000 milliseconds)
+            alarmTime.setMinutes(alarmTime.getMinutes() + 5);
+
+            alarms[alarmName].timeStr = formatTime(alarmTime);
+            updateAlarmsList();
+        }
+
+        function deleteAlarm(alarmName) {
+            delete alarms[alarmName];
+            updateAlarmsList();
+        }
+
+        function updateAlarmsList() {
+            const alarmsList = document.getElementById("alarms-list");
+            alarmsList.innerHTML = "";
+
+            for (const [alarmName, alarm] of Object.entries(alarms)) {
+                const listItem = document.createElement("li");
+                listItem.textContent = alarmName + " - " + alarm.timeStr;
+
+                const startButton = document.createElement("button");
+                startButton.textContent = "Start";
+                startButton.onclick = () => startAlarm(alarmName);
+
+                const pauseButton = document.createElement("button");
+                pauseButton.textContent = "Pause";
+                pauseButton.onclick = () => pauseAlarm(alarmName);
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.onclick = () => deleteAlarm(alarmName);
+
+                listItem.appendChild(startButton);
+                listItem.appendChild(pauseButton);
+                listItem.appendChild(deleteButton);
+
+                alarmsList.appendChild(listItem);
+            }
+        }
+
+        function formatTime(date) {
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const seconds = date.getSeconds();
+            const period = hours >= 12 ? "PM" : "AM";
+
+            return `${hours % 12}:${padZero(minutes)}:${padZero(seconds)} ${period}`;
+        }
+
+        function padZero(num) {
+            return num < 10 ? "0" + num : num;
+        }
+    </script>
+</body>
+
+</html>
